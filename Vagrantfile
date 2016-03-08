@@ -96,9 +96,9 @@ Vagrant.configure("2") do |config|
   # Collect the host names of installed sites.
   #
   # @return array An array of host names found in config files.
-  def get_vvv_hosts
+  def get_vvv_hosts( vagrant_dir )
     # Recursively fetch the paths to all vvv-hosts files under the www/ directory.
-    paths = Dir[File.join("#vagrant_dir", 'www', '**', 'vvv-hosts')]
+    paths = Dir[File.join(vagrant_dir, 'www', '**', 'vvv-hosts')]
 
     # Parse the found vvv-hosts files for host names.
     hosts = paths.map do |path|
@@ -113,9 +113,9 @@ Vagrant.configure("2") do |config|
 
   if defined?(VagrantPlugins::Ghost)
     # Pass the found host names to the Ghost plugin.
-    config.ghost.hosts = get_vvv_hosts
+    config.ghost.hosts = get_vvv_hosts( vagrant_dir )
   elsif defined?(VagrantPlugins::HostsUpdater)
-    config.hostsupdater.aliases = get_vvv_hosts
+    config.hostsupdater.aliases = get_vvv_hosts( vagrant_dir )
     config.hostsupdater.remove_on_suspend = true
   end
 
