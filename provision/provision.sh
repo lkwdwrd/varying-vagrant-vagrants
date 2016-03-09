@@ -90,6 +90,9 @@ apt_package_check_list=(
   #Mailcatcher requirement
   libsqlite3-dev
 
+  #Docker
+  linux-image-extra-$(uname -r)
+  docker-engine
 )
 
 ### FUNCTIONS
@@ -211,8 +214,14 @@ package_install() {
     wget --quiet "http://nginx.org/keys/nginx_signing.key" -O- | apt-key add -
 
     # Apply the nodejs assigning key
+    echo "Applying NodeJS signing key..."
     apt-key adv --quiet --keyserver "hkp://keyserver.ubuntu.com:80" --recv-key C7917B12 2>&1 | grep "gpg:"
     apt-key export C7917B12 | apt-key add -
+
+    # Retrieve the Docker signing key
+    echo "Applying the Docker signing key"
+    apt-key adv --quiet --keyserver "hkp://p80.pool.sks-keyservers.net:80" --recv-keys 58118E89F3A912897C070ADBF76221572C52609D 2>&1 | grep "gpg:"
+    apt-key export 58118E89F3A912897C070ADBF76221572C52609D | apt-key add -
 
     # Update all of the package references before installing anything
     echo "Running apt-get update..."
@@ -333,6 +342,7 @@ nginx_setup() {
   # Copy nginx configuration from local
   cp "/srv/config/nginx-config/nginx.conf" "/etc/nginx/nginx.conf"
   cp "/srv/config/nginx-config/nginx-wp-common.conf" "/etc/nginx/nginx-wp-common.conf"
+  cp "/srv/config/nginx-config/nging-map.conf" "/etc/nginx/nginx-map.conf"
   if [[ ! -d "/etc/nginx/custom-sites" ]]; then
     mkdir "/etc/nginx/custom-sites/"
   fi
@@ -615,7 +625,7 @@ wordpress_default() {
     rm latest.tar.gz
     cd /srv/www/wordpress-default
     echo "Configuring WordPress Stable..."
-    noroot wp core config --dbname=wordpress_default --dbuser=wp --dbpass=wp --quiet --extra-php <<PHP
+    noroot wp core config --dbname=wordpress_default --dbuser=wp --dbpass=wp --dbhost=127.0.0.1 --quiet --extra-php <<PHP
 // Match any requests made via xip.io.
 if ( isset( \$_SERVER['HTTP_HOST'] ) && preg_match('/^(local.wordpress.)\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(.xip.io)\z/', \$_SERVER['HTTP_HOST'] ) ) {
 define( 'WP_HOME', 'http://' . \$_SERVER['HTTP_HOST'] );
@@ -652,7 +662,7 @@ wordpress_trunk() {
     svn checkout "https://core.svn.wordpress.org/trunk/" "/srv/www/wordpress-trunk"
     cd /srv/www/wordpress-trunk
     echo "Configuring WordPress trunk..."
-    noroot wp core config --dbname=wordpress_trunk --dbuser=wp --dbpass=wp --quiet --extra-php <<PHP
+    noroot wp core config --dbname=wordpress_trunk --dbuser=wp --dbpass=wp --dbhost=127.0.0.1 --quiet --extra-php <<PHP
 // Match any requests made via xip.io.
 if ( isset( \$_SERVER['HTTP_HOST'] ) && preg_match('/^(local.wordpress-trunk.)\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(.xip.io)\z/', \$_SERVER['HTTP_HOST'] ) ) {
 define( 'WP_HOME', 'http://' . \$_SERVER['HTTP_HOST'] );
@@ -677,7 +687,7 @@ wordpress_develop(){
     svn checkout "https://develop.svn.wordpress.org/trunk/" "/srv/www/wordpress-develop"
     cd /srv/www/wordpress-develop/src/
     echo "Configuring WordPress develop..."
-    noroot wp core config --dbname=wordpress_develop --dbuser=wp --dbpass=wp --quiet --extra-php <<PHP
+    noroot wp core config --dbname=wordpress_develop --dbuser=wp --dbpass=wp --dbhost=127.0.0.1 --quiet --extra-php <<PHP
 // Match any requests made via xip.io.
 if ( isset( \$_SERVER['HTTP_HOST'] ) && preg_match('/^(src|build)(.wordpress-develop.)\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(.xip.io)\z/', \$_SERVER['HTTP_HOST'] ) ) {
 define( 'WP_HOME', 'http://' . \$_SERVER['HTTP_HOST'] );

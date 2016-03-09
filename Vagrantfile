@@ -287,6 +287,39 @@ Vagrant.configure("2") do |config|
     config.vm.provision :shell, :path => File.join( "provision", "provision.sh" )
   end
 
+  # Docker provisioner for multiple containerized PHP versions, available per-site
+  #
+  # By using containerized PHP processors, each site can choose which version of PHP it
+  # is going to use, from PHP 5.3 to PHP 7.0. Each container has the needed extensions
+  # to run WordPress as well as making the various caching backends available.
+  config.vm.provision "docker" do |d|
+    d.run "php53",
+      image: "10up/php:5.3-fpm",
+      daemonize: true,
+      restart: "always",
+      args: "--net=host -v /srv/www:/srv/www"
+    d.run "php54",
+      image: "10up/php:5.4-fpm",
+      daemonize: true,
+      restart: "always",
+      args: "--net=host -v /srv/www:/srv/www"
+    d.run "php55",
+      image: "10up/php:5.5-fpm",
+      daemonize: true,
+      restart: "always",
+      args: "--net=host -v /srv/www:/srv/www"
+    d.run "php56",
+      image: "10up/php:5.6-fpm",
+      daemonize: true,
+      restart: "always",
+      args: "--net=host -v /srv/www:/srv/www"
+    d.run "php70",
+      image: "10up/php:7.0-fpm",
+      daemonize: true,
+      restart: "always",
+      args: "--net=host -v /srv/www:/srv/www"
+  end
+
   # provision-post.sh acts as a post-hook to the default provisioning. Anything that should
   # run after the shell commands laid out in provision.sh or provision-custom.sh should be
   # put into this file. This provides a good opportunity to install additional packages
@@ -295,11 +328,13 @@ Vagrant.configure("2") do |config|
     config.vm.provision :shell, :path => File.join( "provision", "provision-post.sh" )
   end
 
-  # Always start MySQL on boot, even when not running the full provisioner
+  # Always restart the MySQL process, Dockerized PHP containers, and nginx server on boot,
+  # even when not running the full provisioner.
   # (run: "always" support added in 1.6.0)
   if vagrant_version >= "1.6.0"
-    config.vm.provision :shell, inline: "sudo service mysql restart", run: "always"
-    config.vm.provision :shell, inline: "sudo service nginx restart", run: "always"
+    config.vm.provision :shell, inline: "sudo service docker restart", run: "always"
+    config.vm.provision :shell, inline: "sudo service mysql restart",  run: "always"
+    config.vm.provision :shell, inline: "sudo service nginx restart",  run: "always"
   end
 
   # Vagrant Triggers
